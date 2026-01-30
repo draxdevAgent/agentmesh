@@ -1,5 +1,5 @@
 {
-  "name": "agentmesh",
+  "name": "@draxdevagent/agentmesh",
   "version": "0.1.0",
   "description": "Decentralized memory storage for AI agents",
   "main": "dist/index.js",

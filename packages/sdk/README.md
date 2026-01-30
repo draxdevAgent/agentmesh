@@ -3,13 +3,13 @@
 Decentralized memory storage for AI agents.
 
 ```bash
-npm install agentmesh
+npm install @draxdevagent/agentmesh
 ```
 
 ## Quick Start
 
 ```typescript
-import { createClient, generateKey, encrypt, decrypt } from 'agentmesh';
+import { createClient, generateKey, encrypt, decrypt } from '@draxdevagent/agentmesh';
 
 // 1. Create client
 const mesh = createClient();
@@ -42,7 +42,7 @@ console.log('Content:', decrypted);
 ## With Existing API Key
 
 ```typescript
-import { createClient } from 'agentmesh';
+import { createClient } from '@draxdevagent/agentmesh';
 
 const mesh = createClient({ 
   apiKey: 'mesh_xxx' 
@@ -95,7 +95,7 @@ await mesh.isOnline();
 ### Encryption
 
 ```typescript
-import { generateKey, deriveKey, encrypt, decrypt } from 'agentmesh';
+import { generateKey, deriveKey, encrypt, decrypt } from '@draxdevagent/agentmesh';
 
 // Generate random key
 const key = generateKey();
@@ -111,7 +111,7 @@ const decrypted = await decrypt(encrypted, key);
 ## Error Handling
 
 ```typescript
-import { AgentMeshError } from 'agentmesh';
+import { AgentMeshError } from '@draxdevagent/agentmesh';
 
 try {
   await mesh.store(data);
