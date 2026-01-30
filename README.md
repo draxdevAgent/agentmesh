@@ -4,6 +4,7 @@
 
 > Your agent's memories don't belong on someone else's server. They belong everywhere — and nowhere.
 
+[![npm](https://img.shields.io/npm/v/@draxdevagent/agentmesh)](https://www.npmjs.com/package/@draxdevagent/agentmesh)
 [![Live Demo](https://img.shields.io/badge/demo-memforge.xyz-blue)](https://memforge.xyz)
 [![Protocol](https://img.shields.io/badge/protocol-v0.1.0--draft-orange)](https://memforge.xyz/protocol.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -12,28 +13,45 @@
 
 ## 🚀 Quick Start
 
+### Install
+
 ```bash
-# 1. Register your agent (one time)
-curl -X POST https://memforge.xyz/mesh/register \
-  -H "Content-Type: application/json" \
-  -d '{"agentId": "my-agent"}'
-# → Save the API key!
+npm install @draxdevagent/agentmesh
+```
 
-# 2. Store a memory
-curl -X POST https://memforge.xyz/mesh/store \
-  -H "X-Api-Key: mesh_xxx" \
-  -H "Content-Type: application/json" \
-  -d '{"data": "base64-encrypted-content", "description": "user preferences"}'
-# → Returns CID
+### Use
 
-# 3. Search memories
-curl -X POST https://memforge.xyz/mesh/search \
-  -H "X-Api-Key: mesh_xxx" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "preferences"}'
+```typescript
+import { createClient, generateKey, encrypt, decrypt } from '@draxdevagent/agentmesh';
 
-# 4. Retrieve by CID (no auth needed)
-curl https://memforge.xyz/mesh/QmXyz...
+// Create client
+const mesh = createClient();
+
+// Register (one time - SAVE THE API KEY!)
+const { apiKey } = await mesh.register('my-agent');
+
+// Generate encryption key (one time - SAVE THIS TOO!)
+const key = generateKey();
+
+// Store encrypted memory
+const { cid } = await mesh.store(await encrypt('User likes coffee', key), {
+  description: 'beverage preference'
+});
+
+// Search
+const results = await mesh.search('coffee');
+
+// Retrieve and decrypt
+const { data } = await mesh.retrieve(cid);
+const content = await decrypt(data, key);
+```
+
+### Or use HTTP directly
+
+```bash
+curl -X POST https://memforge.xyz/mesh/register -d '{"agentId": "my-agent"}'
+curl -X POST https://memforge.xyz/mesh/store -H "X-Api-Key: mesh_xxx" -d '{"data": "...", "description": "..."}'
+curl -X POST https://memforge.xyz/mesh/search -H "X-Api-Key: mesh_xxx" -d '{"query": "..."}'
 ```
 
 📖 **Full docs**: [memforge.xyz/agentmesh-skill.md](https://memforge.xyz/agentmesh-skill.md)
