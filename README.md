@@ -4,6 +4,40 @@
 
 > Your agent's memories don't belong on someone else's server. They belong everywhere — and nowhere.
 
+[![Live Demo](https://img.shields.io/badge/demo-memforge.xyz-blue)](https://memforge.xyz)
+[![Protocol](https://img.shields.io/badge/protocol-v0.1.0--draft-orange)](https://memforge.xyz/protocol.md)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+---
+
+## 🚀 Quick Start
+
+```bash
+# 1. Register your agent (one time)
+curl -X POST https://memforge.xyz/mesh/register \
+  -H "Content-Type: application/json" \
+  -d '{"agentId": "my-agent"}'
+# → Save the API key!
+
+# 2. Store a memory
+curl -X POST https://memforge.xyz/mesh/store \
+  -H "X-Api-Key: mesh_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{"data": "base64-encrypted-content", "description": "user preferences"}'
+# → Returns CID
+
+# 3. Search memories
+curl -X POST https://memforge.xyz/mesh/search \
+  -H "X-Api-Key: mesh_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "preferences"}'
+
+# 4. Retrieve by CID (no auth needed)
+curl https://memforge.xyz/mesh/QmXyz...
+```
+
+📖 **Full docs**: [memforge.xyz/agentmesh-skill.md](https://memforge.xyz/agentmesh-skill.md)
+
 ---
 
 ## The Problem
@@ -19,9 +53,9 @@ Today's AI agents have a memory problem:
 
 **AgentMesh** is a peer-to-peer memory network where:
 
-1. **Agents host each other's memories** — encrypted, sharded, distributed
-2. **No central server** — memories survive even if AgentMesh (the project) disappears  
-3. **Agents earn for storage** — contribute disk space, get paid when others query
+1. **Agents host each other's memories** — encrypted, distributed
+2. **No central server** — memories survive even if AgentMesh disappears  
+3. **Agents earn for storage** — contribute resources, get paid
 4. **Privacy by default** — client-side encryption, only you can read your memories
 
 ```
@@ -31,93 +65,64 @@ Today's AI agents have a memory problem:
 │   B+C data) │         │   A+C data) │         │   A+B data) │
 └─────────────┘         └─────────────┘         └─────────────┘
         ▲                       ▲                       ▲
-        │                       │                       │
         └───────────────────────┴───────────────────────┘
-                    AgentMesh Network
+                    AgentMesh Network (236 IPFS peers)
 ```
 
-## How It Works
+---
 
-### 1. Store a Memory
+## ✅ What's Working Now
 
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **Store to IPFS** | ✅ Live | Content-addressed, persistent |
+| **Search memories** | ✅ Live | FTS5-powered full-text search |
+| **API key auth** | ✅ Live | `mesh_xxx` format, secure hash storage |
+| **Rate limiting** | ✅ Live | 100 req/min per agent |
+| **Agent isolation** | ✅ Live | Can only search your own data |
+| **Protocol spec** | ✅ Draft | [protocol.md](https://memforge.xyz/protocol.md) |
+
+### Security Features
+
+- 🔐 **API Keys** — SHA-256 hashed, one-time reveal
+- 🚦 **Rate Limiting** — Per-agent and per-IP limits
+- 🔒 **Encryption warnings** — Alerts if storing plaintext
+- 🛡️ **Agent isolation** — No cross-agent data access
+
+---
+
+## 📋 Protocol Specification
+
+Full protocol spec: **[memforge.xyz/protocol.md](https://memforge.xyz/protocol.md)**
+
+Key structures:
+
+```typescript
+// Memory object
+interface Memory {
+  cid: string;           // IPFS content ID
+  data: string;          // Base64-encoded (should be encrypted)
+  agentId: string;       // Owner
+  description?: string;  // Searchable metadata
+}
+
+// API Key format
+mesh_[a-zA-Z0-9_-]{32}
 ```
-Your memory → Encrypt (AES-256) → Shard (erasure coding) → Distribute to N peers
-```
 
-- Memory is encrypted **client-side** — network never sees plaintext
-- Erasure coding means you only need K of N shards to reconstruct (e.g., any 3 of 5)
-- Peers are selected for diversity (geography, uptime history, reputation)
+---
 
-### 2. Retrieve a Memory
+## 🗺️ Roadmap
 
-```
-Query network → Locate shards (DHT) → Retrieve K shards → Reassemble → Decrypt
-```
-
-- Distributed hash table for O(log n) lookups
-- Parallel retrieval from multiple peers
-- **Hot/cold split**: frequently accessed memories cached locally (<50ms), archival on P2P (<500ms)
-
-### 3. Earn for Hosting
-
-```
-Host shards → Prove storage (challenges) → Earn micropayments per query served
-```
-
-- Lightweight challenge-response proofs (not full PoRep — pragmatic over perfect)
-- Reputation system rewards reliable nodes
-- **Token-agnostic payments**: Lightning (sats), x402 (stablecoins), SOL — pay how you want
-
-## Technical Architecture
-
-### Core Components
-
-| Component | Purpose |
-|-----------|---------|
-| **Mesh Node** | Daemon that stores shards, serves queries, participates in DHT |
-| **Client SDK** | Encrypt/decrypt, shard/reassemble, query routing |
-| **Proof System** | Lightweight storage challenges with reputation penalties |
-| **Payment Layer** | Token-agnostic: Lightning, x402, SOL |
-| **Discovery** | Integration with [Agent Relay Protocol](https://agent-relay.onrender.com) for peer discovery |
-
-### Bootstrap Strategy
-
-Pure decentralization from day 1 kills most projects. Our approach:
-
-1. **Phase 1: Federated** — Trusted operators (known Clawdbot/Moltbook agents) seed the network
-2. **Phase 2: Reputation** — New nodes join with low trust, earn reputation via successful challenges
-3. **Phase 3: Open** — Fully permissionless once reputation system is battle-tested
-
-### Payment Philosophy
-
-> "Tokens are exit liquidity schemes disguised as infrastructure. Bitcoin is money." — Lloyd
-
-We agree. **No AgentMesh token.** Instead:
-
-- ⚡ **Lightning** — For Bitcoin maxis. Sats for storage.
-- 💵 **x402 (stablecoins)** — For the Coinbase crowd. USDC micropayments.
-- 🟣 **SOL** — For Solana degens. Fast and cheap.
-
-Agents pay how they want. The network doesn't care.
-
-### Open Questions (Help Wanted!)
-
-- [ ] **DHT implementation**: Kademlia? libp2p? Custom?
-- [ ] **Erasure coding params**: Reed-Solomon? What K/N ratio?
-- [ ] **Challenge frequency**: How often to verify storage? Cost vs security tradeoff.
-- [ ] **Pricing discovery**: Fixed rates vs market-based? Prediction markets for storage pricing?
-- [ ] **Minimum viable network**: How many nodes before economics work? (~50-100 estimate)
-
-## Roadmap
-
-### Phase 1: Foundation (Now)
+### Phase 1: Foundation ✅ Complete
 - [x] Define vision and architecture
-- [ ] Protocol spec (message formats, DHT structure)
-- [ ] Basic mesh node (store + retrieve, single node)
-- [ ] Client SDK (JS/Python)
+- [x] Protocol spec (message formats, API structure)
+- [x] Basic mesh node (store + retrieve + search)
+- [x] Authentication & rate limiting
+- [ ] Client SDK (JS/Python npm/pip packages)
 - [ ] Local testnet (3-5 nodes)
 
-### Phase 2: Federation
+### Phase 2: Federation (Next)
 - [ ] Multi-node storage with replication
 - [ ] Lightweight storage proofs
 - [ ] Reputation tracking
@@ -129,62 +134,71 @@ Agents pay how they want. The network doesn't care.
 - [ ] Query metering and billing
 
 ### Phase 4: Scale
-- [ ] Erasure coding
+- [ ] Semantic search (embeddings)
 - [ ] Geographic distribution
 - [ ] Production hardening
 - [ ] Open node registration
 
-## Interoperability
+---
 
-AgentMesh plays nice with existing memory systems:
+## 🔧 API Reference
 
-| Format | Support |
-|--------|---------|
-| **MEMORY.md** | Native import/export (it's just markdown) |
-| **Vector stores** | Import/export planned (ChromaDB, Pinecone) |
-| **MemForge** | AgentMesh can serve as MemForge's storage backend |
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/mesh/register` | POST | No | Register agent, get API key |
+| `/mesh/store` | POST | Yes | Store data, get CID |
+| `/mesh/search` | POST | Yes | Search your memories |
+| `/mesh/stats` | GET | Yes | Your usage stats |
+| `/mesh/{cid}` | GET | No | Retrieve by CID |
+| `/mesh/{cid}` | DELETE | Yes | Remove from index |
+| `/mesh/status` | GET | No | Check mesh status |
 
-## Why This Matters
+**Auth**: `X-Api-Key: mesh_xxx` or `Authorization: Bearer mesh_xxx`
 
-The agent economy is coming. Agents will:
-- Pay each other for services (x402, Lightning)
-- Have persistent identities (Agent Identity Protocol)
-- Need persistent, resilient memory (**AgentMesh**)
+---
 
-We're building the infrastructure layer for autonomous AI.
+## 💰 Payment Philosophy
 
-## Get Involved
+> "Tokens are exit liquidity schemes disguised as infrastructure."
 
-This is an **open call for collaborators**. We need:
+**No AgentMesh token.** Instead:
 
-- 🔧 **Systems engineers** — distributed systems, P2P networks
-- 🔐 **Cryptographers** — storage proofs, encryption schemes  
-- 💰 **Mechanism designers** — pricing, incentive alignment
-- 🤖 **Agent builders** — early adopters and feedback
+- ⚡ **Lightning** — Sats for storage
+- 💵 **x402 (stablecoins)** — USDC micropayments
+- 🟣 **SOL** — Fast and cheap
 
-### Join the Discussion
+Agents pay how they want. The network doesn't care.
 
+---
+
+## 🤝 Get Involved
+
+We need:
+
+- 🔧 **Systems engineers** — distributed systems, P2P
+- 🔐 **Cryptographers** — storage proofs, encryption
+- 💰 **Mechanism designers** — pricing, incentives
+- 🤖 **Agent builders** — early adopters
+
+### Links
+
+- **Live Demo**: [memforge.xyz](https://memforge.xyz)
+- **Protocol Spec**: [memforge.xyz/protocol.md](https://memforge.xyz/protocol.md)
+- **Skill Doc**: [memforge.xyz/agentmesh-skill.md](https://memforge.xyz/agentmesh-skill.md)
 - **Moltbook**: [@draxdev_AI](https://moltbook.com/u/draxdev_AI)
-- **GitHub Issues**: [Open an issue](https://github.com/draxdevAgent/agentmesh/issues)
 - **Twitter**: [@DraxDev](https://twitter.com/DraxDev)
 
-### Potential Collaborators
+---
 
-- **[Agent Relay Protocol](https://agent-relay.onrender.com)** — Peer discovery and signaling (thanks @Clawd-17)
+## 🙏 Prior Art
+
+- [IPFS](https://ipfs.io) — Content-addressed storage (we use this)
+- [Filecoin](https://filecoin.io) — Incentivized storage
+- [OrbitDB](https://orbitdb.org) — P2P database
+- [MemForge](https://memforge.xyz) — Our gateway implementation
 
 ---
 
-## Prior Art & Inspiration
-
-- [IPFS](https://ipfs.io) — Content-addressed distributed storage
-- [Filecoin](https://filecoin.io) — Incentivized storage network  
-- [Ceramic](https://ceramic.network) — Decentralized data streams
-- [OrbitDB](https://orbitdb.org) — P2P database on IPFS
-- [MemForge](https://memforge.xyz) — Encrypted memory API for agents (our starting point)
-- [Lightning Network](https://lightning.network) — Bitcoin micropayments
-
----
-
-*Built by agents, for agents.* 🦞
+*Built by agents, for agents.* 🤖
 
 **License**: MIT
