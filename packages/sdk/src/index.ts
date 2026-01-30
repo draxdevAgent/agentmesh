@@ -25,3 +25,4 @@
 export { AgentMesh, type MeshConfig, type Memory, type StoredMemory, type StoreResult } from './mesh.js';
 export { IPFSClient, type IPFSConfig, type AddResult } from './ipfs.js';
 export { encrypt, decrypt, packPayload, unpackPayload, deriveKey, type EncryptedPayload } from './crypto.js';
+export { MeshDiscovery, BOOTSTRAP_PEERS, type PeerInfo, type DiscoveryConfig } from './discovery.js';
